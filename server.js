@@ -1,35 +1,21 @@
-// server.js - Servidor local para impresión térmica con HTTPS
+// server.js - Servidor local para impresión térmica con HTTP (ngrok provee HTTPS)
+require('dotenv').config();
 const express = require('express');
-const https = require('https');
+const http = require('http');
 const cors = require('cors');
 const net = require('net');
-const fs = require('fs');
-const path = require('path');
 const iconv = require("iconv-lite");
 const app = express();
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 
 // Configuración de la impresora
 const PRINTER_IP = process.env.PRINTER_IP || '192.168.1.200';
 const PRINTER_PORT = process.env.PRINTER_PORT || 9100;
 const PRINT_SERVER_SECRET = process.env.PRINT_SERVER_SECRET || 'tu-secreto-muy-largo-y-dificil-de-adivinar';
 
-// Configuración HTTPS - Cargar certificados
-let httpsOptions;
-try {
-  httpsOptions = {
-    key: fs.readFileSync(path.join(__dirname, '192.168.1.47-key.pem')),
-    cert: fs.readFileSync(path.join(__dirname, '192.168.1.47.pem'))
-  };
-  console.log('✅ Certificados HTTPS cargados correctamente');
-} catch (error) {
-  console.error('❌ Error cargando certificados:', error.message);
-  console.log('Asegúrate de que los archivos printserver.local-key.pem y printserver.local.pem estén en la raíz del proyecto');
-  process.exit(1);
-}
-
-app.use(cors({ 
-  origin: "https://la-casita.vercel.app",
+// CORS - ngrok se encarga del HTTPS
+app.use(cors({
+  origin: ["https://la-casita.vercel.app", "http://localhost:3000"],
   methods: ["GET", "POST"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
@@ -476,18 +462,19 @@ app.post('/test-print', verifyToken, async (req, res) => {
   }
 });
 
-// Crear servidor HTTPS
-const server = https.createServer(httpsOptions, app);
+// Crear servidor HTTP (ngrok provee HTTPS)
+const server = http.createServer(app);
 
 server.listen(PORT, "0.0.0.0", () => {
-  console.log(`🖨️  Servidor de impresión HTTPS ejecutándose en puerto ${PORT}`);
+  console.log(`🖨️  Servidor de impresión HTTP ejecutándose en puerto ${PORT}`);
   console.log(`📡 Configurado para impresora en ${PRINTER_IP}:${PRINTER_PORT}`);
-  console.log(`🔐 Disponible en: https://192.168.1.47:${PORT}`);
+  console.log(`🌐 Servidor local en: http://localhost:${PORT}`);
   console.log(`🔗 Endpoints disponibles:`);
-  console.log(`   • https://192.168.1.47:${PORT}/test`);
-  console.log(`   • https://192.168.1.47:${PORT}/print (POST)`);
-  console.log(`   • https://192.168.1.47:${PORT}/test-print (POST)`);
-  
+  console.log(`   • /test (GET)`);
+  console.log(`   • /print (POST)`);
+  console.log(`   • /test-print (POST)`);
+  console.log(`\n⚡ Para exponer con ngrok, ejecuta: npm run ngrok`);
+
   // Imprimir mensaje de inicio en la impresora térmica
   setTimeout(() => {
     console.log('🖨️  Enviando mensaje de inicio a la impresora...');

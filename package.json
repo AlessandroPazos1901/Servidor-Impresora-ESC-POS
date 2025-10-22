@@ -5,10 +5,14 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "ngrok": "node start-ngrok.js",
+    "prod": "node start-ngrok.js"
   },
   "dependencies": {
+    "@ngrok/ngrok": "^1.5.2",
     "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
     "express": "^4.21.2",
     "iconv-lite": "^0.7.0"
   },

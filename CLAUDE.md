@@ -5,9 +5,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ### Development
-- `npm start` - Start the production server
+- `npm start` - Start the local HTTP server only
 - `npm run dev` - Start development server with nodemon for auto-restart
+- `npm run ngrok` (or `npm run prod`) - Start server with ngrok tunnel (recommended)
 - `node server.js` - Run server directly
+
+### ngrok Setup (Recommended)
+1. Get your authtoken from https://dashboard.ngrok.com/get-started/your-authtoken
+2. Add `NGROK_AUTHTOKEN` to your `.env` file
+3. For ngrok Pro users, add `NGROK_DOMAIN` for a static domain
+4. Run `npm run ngrok` to start server with public HTTPS tunnel
 
 ### Docker
 - Build: `docker build -t thermal-printer-server .`
@@ -16,21 +23,27 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture Overview
 
-This is a Node.js HTTPS server for printing thermal receipts to ESC/POS compatible printers over TCP/IP. The server acts as a bridge between a web application and a thermal printer on the local network.
+This is a Node.js HTTP server for printing thermal receipts to ESC/POS compatible printers over TCP/IP. The server acts as a bridge between a web application and a thermal printer on the local network. HTTPS is provided by ngrok for secure public access.
 
 ### Core Components
 
-**Server (server.js)**: Express.js HTTPS server with the following key sections:
-- HTTPS configuration using self-signed certificates (192.168.1.47.pem/key)
+**Server (server.js)**: Express.js HTTP server with the following key sections:
+- HTTP server (ngrok provides HTTPS tunnel)
 - CORS setup allowing requests from `https://la-casita.vercel.app`
 - Bearer token authentication middleware
 - ESC/POS command definitions and thermal printer formatting logic
 - TCP socket connection handling for printer communication
 
+**ngrok Integration (start-ngrok.js)**: Automatic tunnel setup with:
+- Server process management
+- Automatic ngrok tunnel creation
+- Support for static domains (ngrok Pro)
+- Graceful shutdown handling
+
 ### Key Features
 
 **Security**:
-- HTTPS only with self-signed certificates
+- HTTPS via ngrok tunnel (no self-signed certificates needed)
 - Bearer token authentication for all endpoints
 - CORS restricted to specific origin
 
@@ -47,9 +60,12 @@ This is a Node.js HTTPS server for printing thermal receipts to ESC/POS compatib
 ### Environment Configuration
 
 Required environment variables (see .env):
-- `PRINTER_IP` - IP address of thermal printer
-- `PRINTER_PORT` - Port of thermal printer (typically 9100)
+- `PRINTER_IP` - IP address of thermal printer (default: 192.168.1.200)
+- `PRINTER_PORT` - Port of thermal printer (default: 9100)
+- `PORT` - Local server port (default: 3001)
 - `PRINT_SERVER_SECRET` - Bearer token for authentication
+- `NGROK_AUTHTOKEN` - Your ngrok authentication token (get from https://dashboard.ngrok.com)
+- `NGROK_DOMAIN` - (Optional) Static domain for ngrok Pro users
 
 ### Order Data Format
 
@@ -97,8 +113,23 @@ The `formatComanda()` function handles:
 
 ### Key Files
 
-- `server.js` - Main HTTPS server with ESC/POS printing logic
+- `server.js` - Main HTTP server with ESC/POS printing logic
+- `start-ngrok.js` - ngrok tunnel initialization and management
 - `docker-compose.yml` - Container orchestration with health checks
 - `docker-entrypoint.sh` - Reliable startup script with auto-restart
 - `Dockerfile` - Container build configuration
-- `.env` - Environment configuration for printer IP and authentication token
+- `.env` - Environment configuration (printer, ngrok, authentication)
+
+### ngrok Benefits
+
+**Why ngrok over self-signed certificates:**
+- No certificate warnings in browsers
+- Public HTTPS access from anywhere
+- Static domains with Pro plan (doesn't change on restart)
+- Automatic SSL/TLS handling
+- Easy testing from external services (like Vercel)
+- Built-in request inspection dashboard
+
+**ngrok Free vs Pro:**
+- Free: URL changes on each restart, good for testing
+- Pro: Static domain that never changes, perfect for production

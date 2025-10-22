@@ -6,20 +6,29 @@ WORKDIR /usr/src/app
 
 # Copia dependencias
 COPY package*.json ./
-RUN npm install
+RUN npm install --production
 
-RUN apt-get update && apt-get install -y tzdata
+# Instalar utilidades necesarias
+RUN apt-get update && apt-get install -y \
+    tzdata \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
 ENV TZ=America/Lima
 
 # Copia código fuente
 COPY server.js .
+COPY start-ngrok.js .
+COPY docker-entrypoint.sh .
 
-# Copia certificados SSL
-COPY 192.168.1.47.pem .
-COPY 192.168.1.47-key.pem .
-        
-# Expone puerto 3001 para HTTPS
+# Hacer ejecutable el entrypoint
+RUN chmod +x docker-entrypoint.sh
+
+# Crear directorios para logs
+RUN mkdir -p /usr/src/app/logs
+
+# Expone puerto 3001 para HTTP (ngrok provee HTTPS)
 EXPOSE 3001
 
-# Arranca el server
-CMD ["node", "server.js"]
+# Usar el entrypoint personalizado
+ENTRYPOINT ["./docker-entrypoint.sh"]

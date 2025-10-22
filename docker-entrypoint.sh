@@ -1,12 +1,13 @@
 #!/bin/bash
-# docker-entrypoint.sh - Script de inicio ultra-confiable para Docker
+# docker-entrypoint.sh - Script de inicio ultra-confiable para Docker con ngrok
 
 set -e
 
-echo "🐳 Iniciando Servidor de Impresión Térmica Ultra-Confiable..."
+echo "🐳 Iniciando Servidor de Impresión Térmica con ngrok..."
 echo "📅 Fecha: $(date)"
 echo "🌐 Timezone: $TZ"
 echo "🖨️  IP Impresora: ${PRINTER_IP}:${PRINTER_PORT}"
+echo "🔧 Puerto local: ${PORT:-3001}"
 
 # Función para manejar señales de terminación
 cleanup() {
@@ -14,25 +15,37 @@ cleanup() {
     if [ ! -z "$SERVER_PID" ]; then
         kill $SERVER_PID 2>/dev/null || true
     fi
-    if [ ! -z "$WATCHDOG_PID" ]; then
-        kill $WATCHDOG_PID 2>/dev/null || true
-    fi
     exit 0
 }
 
 # Configurar manejo de señales
 trap cleanup SIGTERM SIGINT
 
-# Verificar certificados
-if [ ! -f "/usr/src/app/certs/192.168.1.47.pem" ] || [ ! -f "/usr/src/app/certs/192.168.1.47-key.pem" ]; then
-    echo "⚠️  Certificados SSL no encontrados en /usr/src/app/certs/"
-    echo "💡 Montando volumen con certificados o generando certificados temporales..."
-fi
-
 # Crear logs si no existen
+mkdir -p /usr/src/app/logs
 touch /usr/src/app/logs/server.log
 touch /usr/src/app/logs/errors.log
-touch /usr/src/app/logs/watchdog.log
+
+# Verificar si se debe usar ngrok
+USE_NGROK=${USE_NGROK:-true}
+
+if [ "$USE_NGROK" = "true" ] || [ "$USE_NGROK" = "1" ]; then
+    # Verificar authtoken de ngrok
+    if [ -z "$NGROK_AUTHTOKEN" ] || [ "$NGROK_AUTHTOKEN" = "tu_authtoken_aqui" ]; then
+        echo "⚠️  ADVERTENCIA: NGROK_AUTHTOKEN no configurado!"
+        echo "❌ No se puede iniciar ngrok sin authtoken válido"
+        echo "💡 Iniciando solo servidor local HTTP en puerto ${PORT:-3001}..."
+        echo ""
+        USE_NGROK="false"
+    else
+        echo "✅ ngrok configurado correctamente"
+        if [ ! -z "$NGROK_DOMAIN" ]; then
+            echo "📍 Usando dominio estático: $NGROK_DOMAIN"
+        else
+            echo "⚠️  Sin dominio estático (URL cambiará en cada reinicio)"
+        fi
+    fi
+fi
 
 echo "🚀 Iniciando servidor principal..."
 
@@ -43,40 +56,43 @@ restart_server() {
 
     while [ $attempt -le $max_attempts ]; do
         echo "🔄 Intento $attempt/$max_attempts - Iniciando servidor..."
-        
-        # Iniciar servidor en segundo plano
-        node server.js &
-        SERVER_PID=$!
-        
+
+        # Decidir qué iniciar: ngrok o solo servidor
+        if [ "$USE_NGROK" = "true" ]; then
+            echo "🔗 Iniciando con ngrok..."
+            node start-ngrok.js >> /usr/src/app/logs/server.log 2>> /usr/src/app/logs/errors.log &
+            SERVER_PID=$!
+        else
+            echo "🌐 Iniciando solo servidor HTTP local..."
+            node server.js >> /usr/src/app/logs/server.log 2>> /usr/src/app/logs/errors.log &
+            SERVER_PID=$!
+        fi
+
         # Esperar un momento para ver si el servidor inicia correctamente
         sleep 5
-        
+
         # Verificar si el proceso sigue vivo
         if kill -0 $SERVER_PID 2>/dev/null; then
             echo "✅ Servidor iniciado exitosamente (PID: $SERVER_PID)"
-            
-            # Iniciar watchdog en segundo plano
-            echo "🐕 Iniciando watchdog monitor..."
-            node watchdog.js &
-            WATCHDOG_PID=$!
-            echo "✅ Watchdog iniciado (PID: $WATCHDOG_PID)"
-            
+
+            # Mostrar info según el modo
+            if [ "$USE_NGROK" = "true" ]; then
+                echo "📊 Revisa los logs para ver tu URL pública de ngrok"
+                echo "💡 Logs: docker logs -f thermal-printer-server"
+            else
+                echo "🌐 Servidor disponible en: http://localhost:${PORT:-3001}"
+            fi
+
             # Esperar a que termine el servidor
             wait $SERVER_PID
             SERVER_EXIT_CODE=$?
-            
+
             echo "⚠️  Servidor terminó con código: $SERVER_EXIT_CODE"
-            
-            # Detener watchdog
-            if [ ! -z "$WATCHDOG_PID" ]; then
-                kill $WATCHDOG_PID 2>/dev/null || true
-                wait $WATCHDOG_PID 2>/dev/null || true
-            fi
-            
+
         else
             echo "❌ El servidor falló al iniciar"
         fi
-        
+
         # Si llegamos aquí, el servidor terminó - reiniciar
         attempt=$((attempt + 1))
         if [ $attempt -le $max_attempts ]; then
@@ -84,7 +100,7 @@ restart_server() {
             sleep 10
         fi
     done
-    
+
     echo "❌ FALLO CRÍTICO: No se pudo iniciar el servidor después de $max_attempts intentos"
     exit 1
 }

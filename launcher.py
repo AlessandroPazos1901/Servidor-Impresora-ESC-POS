@@ -19,6 +19,8 @@ class ThermalPrinterLauncher:
         self.server_process = None
         self.is_running = False
         self.start_time = None
+        self.ngrok_url = None
+        self.use_docker = False
         
         # Colores modernos
         self.colors = {
@@ -88,10 +90,13 @@ class ThermalPrinterLauncher:
                 font=("Segoe UI", 12, "bold"), fg=self.colors['dark'], 
                 bg=self.colors['light']).pack(pady=(5, 10))
         
+        # Leer configuración del .env si existe
+        self.config = self.load_env_config()
+
         info_items = [
-            ("🌐 Servidor HTTPS:", "https://192.168.1.47:3001"),
-            ("🖨️ Impresora IP:", "192.168.1.200:9100"),
-            ("🔐 Estado SSL:", "Certificados Cargados"),
+            ("🌐 Modo:", self.config.get('mode', 'HTTP + ngrok')),
+            ("🖨️ Impresora IP:", f"{self.config.get('printer_ip', '192.168.1.200')}:{self.config.get('printer_port', '9100')}"),
+            ("🔐 ngrok:", "Configurado ✓" if self.config.get('has_ngrok_token') else "No configurado"),
             ("📡 CORS Origin:", "la-casita.vercel.app")
         ]
         
@@ -182,6 +187,36 @@ class ThermalPrinterLauncher:
         welcome_msg += f"{'='*50}\n"
         self.log_message(welcome_msg)
         
+    def load_env_config(self):
+        """Cargar configuración del archivo .env"""
+        config = {
+            'mode': 'HTTP + ngrok',
+            'printer_ip': '192.168.1.200',
+            'printer_port': '9100',
+            'has_ngrok_token': False
+        }
+
+        try:
+            if os.path.exists('.env'):
+                with open('.env', 'r', encoding='utf-8') as f:
+                    for line in f:
+                        line = line.strip()
+                        if '=' in line and not line.startswith('#'):
+                            key, value = line.split('=', 1)
+                            key = key.strip()
+                            value = value.strip()
+
+                            if key == 'PRINTER_IP':
+                                config['printer_ip'] = value
+                            elif key == 'PRINTER_PORT':
+                                config['printer_port'] = value
+                            elif key == 'NGROK_AUTHTOKEN' and value and value != 'tu_authtoken_aqui':
+                                config['has_ngrok_token'] = True
+        except Exception as e:
+            print(f"Error loading .env: {e}")
+
+        return config
+
     def update_clock(self):
         """Actualizar el reloj cada segundo"""
         now = datetime.now()
@@ -216,7 +251,8 @@ class ThermalPrinterLauncher:
         try:
             self.log_message("🚀 Iniciando servidor...")
             self.start_time = datetime.now()
-            
+            self.ngrok_url = None
+
             def run_server():
                 try:
                     # Verificar si existe imagen Docker
@@ -225,52 +261,89 @@ class ThermalPrinterLauncher:
                         capture_output=True, text=True,
                         creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
                     )
-                    
+
                     if check_image.stdout.strip():
                         # Usar Docker si la imagen existe
-                        self.root.after(0, lambda: self.log_message("🐳 Usando imagen Docker existente"))
+                        self.use_docker = True
+                        self.root.after(0, lambda: self.log_message("🐳 Iniciando con Docker..."))
                         self.server_process = subprocess.Popen(
-                            ["docker", "run", "--env-file", ".env", "-p", "3001:3001", "--name", "thermal-printer", "--rm", "thermal-printer-server"],
+                            "docker run --env-file .env -p 3001:3001 --name thermal-printer --rm thermal-printer-server",
                             stdout=subprocess.PIPE,
                             stderr=subprocess.STDOUT,
                             universal_newlines=True,
+                            shell=True,
+                            encoding='utf-8',
+                            errors='replace',
                             creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
                         )
                     else:
-                        # Fallback a npm start si no hay imagen Docker
-                        self.root.after(0, lambda: self.log_message("📦 Usando npm start (construye imagen Docker primero)"))
+                        # Fallback a npm run ngrok si no hay imagen Docker
+                        self.use_docker = False
+                        has_ngrok = self.config.get('has_ngrok_token', False)
+
+                        if has_ngrok:
+                            self.root.after(0, lambda: self.log_message("🔗 Iniciando con ngrok..."))
+                            cmd = "npm run ngrok"
+                        else:
+                            self.root.after(0, lambda: self.log_message("⚠️ ngrok no configurado, iniciando servidor local"))
+                            cmd = "npm start"
+
                         self.server_process = subprocess.Popen(
-                            ["npm", "start"],
+                            cmd,
                             stdout=subprocess.PIPE,
                             stderr=subprocess.STDOUT,
                             universal_newlines=True,
+                            shell=True,
+                            encoding='utf-8',
+                            errors='replace',
                             creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
                         )
-                    
+
+                    # Leer salida del proceso
                     for line in iter(self.server_process.stdout.readline, ''):
                         if line:
-                            self.root.after(0, lambda l=line.strip(): self.log_message(f"📋 {l}"))
+                            line_stripped = line.strip()
+
+                            # Detectar URL de ngrok
+                            if 'URL Pública:' in line_stripped or 'ngrok-free.app' in line_stripped or 'ngrok.app' in line_stripped:
+                                # Extraer URL
+                                import re
+                                url_match = re.search(r'https://[a-zA-Z0-9-]+\.ngrok[a-z-]*\.[a-z]+', line_stripped)
+                                if url_match:
+                                    self.ngrok_url = url_match.group(0)
+                                    self.root.after(0, lambda u=self.ngrok_url: self.show_ngrok_url(u))
+
+                            self.root.after(0, lambda l=line_stripped: self.log_message(f"📋 {l}"))
+
                         if self.server_process.poll() is not None:
                             break
-                            
+
                 except Exception as e:
-                    self.root.after(0, lambda: self.log_message(f"❌ Error: {str(e)}"))
-            
+                    self.root.after(0, lambda e=e: self.log_message(f"❌ Error: {str(e)}"))
+
             server_thread = threading.Thread(target=run_server, daemon=True)
             server_thread.start()
-            
+
             # Actualizar UI
             self.is_running = True
             self.status_label.config(text="🟢 Estado: Ejecutándose", fg=self.colors['success'])
             self.start_button.config(state=tk.DISABLED)
             self.stop_button.config(state=tk.NORMAL)
-            
+
             self.log_message("✅ Servidor iniciado correctamente")
-            self.log_message("🔗 Servidor disponible en: https://192.168.1.47:3001")
-            
+            if not self.config.get('has_ngrok_token'):
+                self.log_message("🌐 Servidor local en: http://localhost:3001")
+            else:
+                self.log_message("⏳ Esperando URL pública de ngrok...")
+
         except Exception as e:
             messagebox.showerror("Error", f"No se pudo iniciar el servidor:\n{str(e)}")
             self.log_message(f"❌ Error al iniciar: {str(e)}")
+
+    def show_ngrok_url(self, url):
+        """Mostrar URL de ngrok en un popup simple"""
+        self.log_message(f"✅ Servidor listo: {url}")
+        # No mostrar popup, solo en logs es suficiente
     
     
     def stop_server(self):
@@ -278,28 +351,46 @@ class ThermalPrinterLauncher:
         try:
             if self.server_process:
                 self.log_message("🛑 Deteniendo servidor...")
-                
+
                 # Detener contenedor Docker si existe
                 try:
-                    subprocess.run(["docker", "stop", "thermal-printer"], 
+                    subprocess.run(["docker", "stop", "thermal-printer"],
                                  creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0,
-                                 timeout=10)
+                                 timeout=10,
+                                 capture_output=True)
                     self.log_message("🐳 Contenedor Docker detenido")
                 except:
                     pass
-                
-                self.server_process.terminate()
+
+                # Matar el proceso y todos sus hijos
+                if sys.platform == "win32":
+                    # En Windows, usar taskkill para matar el árbol de procesos
+                    try:
+                        subprocess.run(
+                            ["taskkill", "/F", "/T", "/PID", str(self.server_process.pid)],
+                            creationflags=subprocess.CREATE_NO_WINDOW,
+                            capture_output=True,
+                            timeout=5
+                        )
+                        self.log_message("🔪 Procesos detenidos (npm, node, ngrok)")
+                    except Exception as e:
+                        self.log_message(f"⚠️ Error al detener procesos: {str(e)}")
+                else:
+                    # En Linux/Mac, usar terminate normal
+                    self.server_process.terminate()
+
                 self.server_process = None
-                
+
             self.is_running = False
             self.start_time = None
+            self.ngrok_url = None
             self.status_label.config(text="🔴 Estado: Detenido", fg=self.colors['danger'])
             self.uptime_label.config(text="Tiempo activo: --")
             self.start_button.config(state=tk.NORMAL)
             self.stop_button.config(state=tk.DISABLED)
-            
+
             self.log_message("✅ Servidor detenido correctamente")
-            
+
         except Exception as e:
             messagebox.showerror("Error", f"Error al detener el servidor:\n{str(e)}")
     
@@ -316,22 +407,25 @@ class ThermalPrinterLauncher:
     def check_server(self):
         """Verificar si el servidor está respondiendo"""
         self.log_message("🔍 Verificando estado del servidor...")
-        
+
         def check():
             import urllib.request
             import ssl
-            
+
             # Crear contexto SSL que ignore certificados
             ctx = ssl.create_default_context()
             ctx.check_hostname = False
             ctx.verify_mode = ssl.CERT_NONE
-            
+
             urls = [
-                "https://192.168.1.47:3001/test",
-                "https://localhost:3001/test",
-                "https://127.0.0.1:3001/test"
+                "http://localhost:3001/test",
+                "http://127.0.0.1:3001/test"
             ]
-            
+
+            # Si hay URL de ngrok, probarla también
+            if self.ngrok_url:
+                urls.insert(0, f"{self.ngrok_url}/test")
+
             for url in urls:
                 try:
                     with urllib.request.urlopen(url, context=ctx, timeout=3) as response:
@@ -340,9 +434,9 @@ class ThermalPrinterLauncher:
                             return
                 except Exception as e:
                     self.root.after(0, lambda u=url, err=str(e): self.log_message(f"❌ {u}: {err}"))
-            
+
             self.root.after(0, lambda: self.log_message("❌ Servidor no responde en ninguna URL"))
-        
+
         threading.Thread(target=check, daemon=True).start()
     
     def on_closing(self):
