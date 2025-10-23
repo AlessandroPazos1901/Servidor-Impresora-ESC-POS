@@ -4,22 +4,22 @@ Esta guía es específica para migrar el sistema de impresión en **otras comput
 
 ---
 
-## 📋 Información General
+##  Información General
 
 ### Lo que necesitas:
-- ✅ Token de ngrok (uno solo para todas las computadoras)
-- ✅ 10-15 minutos por computadora
-- ✅ Acceso remoto o físico a cada computadora
+-  Token de ngrok (uno solo para todas las computadoras)
+-  10-15 minutos por computadora
+-  Acceso remoto o físico a cada computadora
 
 ### Lo que NO necesitas:
-- ❌ Reinstalar Node.js
-- ❌ Reinstalar Docker
-- ❌ Cambiar configuración de la impresora
-- ❌ Reconfigurar el sistema desde cero
+-  Reinstalar Node.js
+-  Reinstalar Docker
+-  Cambiar configuración de la impresora
+-  Reconfigurar el sistema desde cero
 
 ---
 
-## 🚀 Pasos de Migración (Versión Rápida)
+##  Pasos de Migración (Versión Rápida)
 
 ### Paso 1: Conectarse a la computadora remota
 
@@ -27,7 +27,7 @@ Usa escritorio remoto, TeamViewer, AnyDesk o acceso físico.
 
 ### Paso 2: Detener el servidor actual
 
-1. Si el launcher está corriendo, **cierra la ventana del launcher** (click en ❌)
+1. Si el launcher está corriendo, **cierra la ventana del launcher** (click en )
 2. Si hay un proceso corriendo, el launcher preguntará si quieres detenerlo → **Sí**
 
 ### Paso 3: Actualizar archivos del proyecto
@@ -93,7 +93,7 @@ docker-compose build --no-cache
 2. Click en **▶️ INICIAR SERVIDOR**
 3. Espera unos segundos...
 4. Verás un **popup con la URL pública** de ngrok 🎉
-5. **Copia esa URL** (click en "📋 Copiar URL")
+5. **Copia esa URL** (click en " Copiar URL")
 
 ### Paso 8: Probar que funciona
 
@@ -107,7 +107,7 @@ Deberías ver:
 {"message":"Servidor de impresión HTTPS funcionando correctamente"}
 ```
 
-✅ **¡Listo!** El servidor está migrando exitosamente.
+ **¡Listo!** El servidor está migrando exitosamente.
 
 ---
 
@@ -192,17 +192,17 @@ Sí, debes actualizar la URL del servidor de impresión con la nueva URL de ngro
 ### ¿El launcher seguirá funcionando igual?
 
 ¡Sí! El launcher ahora:
-- ✅ Detecta automáticamente si tienes ngrok configurado
-- ✅ Muestra un popup con la URL pública cuando inicia
-- ✅ Permite copiar la URL con un click
-- ✅ Verifica el servidor en la URL de ngrok
+-  Detecta automáticamente si tienes ngrok configurado
+-  Muestra un popup con la URL pública cuando inicia
+-  Permite copiar la URL con un click
+-  Verifica el servidor en la URL de ngrok
 
 ### ¿Qué pasa si no configuro el token de ngrok?
 
 El launcher iniciará el servidor en modo **HTTP local** (sin ngrok):
-- ⚠️ Solo accesible en `http://localhost:3001`
-- ⚠️ NO accesible desde internet
-- ⚠️ NO accesible desde tu app de Vercel
+-  Solo accesible en `http://localhost:3001`
+-  NO accesible desde internet
+-  NO accesible desde tu app de Vercel
 
 ### ¿Puedo hacer rollback si algo sale mal?
 
@@ -236,7 +236,7 @@ Si algo sale mal:
 
 **Solución:**
 1. Mira los logs en el launcher
-2. Busca una línea que diga: `🌐 URL Pública: https://...`
+2. Busca una línea que diga: ` URL Pública: https://...`
 3. Copia esa URL manualmente
 
 ### Error: "NGROK_AUTHTOKEN no configurado"
@@ -278,7 +278,7 @@ docker logs -f thermal-printer-server
 
 ---
 
-## ✅ Checklist de Verificación Post-Migración
+##  Checklist de Verificación Post-Migración
 
 Después de migrar, verifica:
 
@@ -287,24 +287,24 @@ Después de migrar, verifica:
 - [ ] Aparece un popup con la URL pública de ngrok
 - [ ] La URL de ngrok responde al acceder desde un navegador
 - [ ] El endpoint `/test` devuelve un JSON correctamente
-- [ ] Puedes copiar la URL con el botón "📋 Copiar URL"
+- [ ] Puedes copiar la URL con el botón " Copiar URL"
 - [ ] La impresora responde a comandos de prueba
 - [ ] Los logs muestran actividad correctamente
 
 ---
 
-## 📊 Ejemplo de Logs Exitosos
+##  Ejemplo de Logs Exitosos
 
 Cuando todo funciona correctamente, verás logs como estos:
 
 ```
-[14:23:45] 🚀 Iniciando servidor...
-[14:23:46] 🔗 Iniciando con ngrok...
-[14:23:47] 📋 Servidor de impresión HTTP ejecutándose en puerto 3001
-[14:23:50] 📋 Túnel ngrok establecido exitosamente!
-[14:23:50] 🌐 URL Pública: https://abc-def-ghi.ngrok-free.app
-[14:23:50] 💡 Copia esta URL y úsala en tu aplicación
-[14:23:50] ✅ Servidor iniciado correctamente
+[14:23:45]  Iniciando servidor...
+[14:23:46]  Iniciando con ngrok...
+[14:23:47]  Servidor de impresión HTTP ejecutándose en puerto 3001
+[14:23:50]  Túnel ngrok establecido exitosamente!
+[14:23:50]  URL Pública: https://abc-def-ghi.ngrok-free.app
+[14:23:50]  Copia esta URL y úsala en tu aplicación
+[14:23:50]  Servidor iniciado correctamente
 [14:23:50] ⏳ Esperando URL pública de ngrok...
 ```
 
@@ -322,7 +322,7 @@ Si tienes problemas:
 
 ---
 
-## 📝 Script de Migración Automática (Opcional)
+##  Script de Migración Automática (Opcional)
 
 Si quieres automatizar la migración, crea un archivo `migrate.bat`:
 

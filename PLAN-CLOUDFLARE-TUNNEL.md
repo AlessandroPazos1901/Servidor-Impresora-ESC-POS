@@ -1,19 +1,19 @@
-# 🚀 Plan de Migración: ngrok → Cloudflare Tunnel
+#  Plan de Migración: ngrok → Cloudflare Tunnel
 
 Este documento describe el plan organizado en fases para migrar de ngrok a Cloudflare Tunnel cuando sea necesario.
 
 ---
 
-## 📋 ¿Cuándo considerar esta migración?
+##  ¿Cuándo considerar esta migración?
 
-- ✅ Tienes 5+ locales y el costo de ngrok Pro es significativo ($40+/mes)
-- ✅ Quieres una solución 100% gratuita a largo plazo
-- ✅ Necesitas mejor performance y confiabilidad empresarial
-- ✅ Quieres más control (access policies, analytics, etc.)
+-  Tienes 5+ locales y el costo de ngrok Pro es significativo ($40+/mes)
+-  Quieres una solución 100% gratuita a largo plazo
+-  Necesitas mejor performance y confiabilidad empresarial
+-  Quieres más control (access policies, analytics, etc.)
 
 ---
 
-## 📊 Comparación Rápida
+##  Comparación Rápida
 
 | Aspecto | ngrok Pro | Cloudflare Tunnel |
 |---------|-----------|-------------------|
@@ -79,10 +79,10 @@ async function installCloudflared() {
   // Detectar si ya está instalado
   try {
     execSync('cloudflared --version', { stdio: 'pipe' });
-    console.log('✅ cloudflared ya está instalado');
+    console.log('cloudflared ya está instalado');
     return true;
   } catch {
-    console.log('📥 Descargando cloudflared...');
+    console.log('Descargando cloudflared...');
   }
 
   // Descargar según plataforma
@@ -105,11 +105,11 @@ const TUNNEL_TOKEN = process.env.CLOUDFLARE_TUNNEL_TOKEN;
 
 // Validaciones
 if (!TUNNEL_TOKEN) {
-  console.error('❌ Error: CLOUDFLARE_TUNNEL_TOKEN no configurado');
+  console.error('Error: CLOUDFLARE_TUNNEL_TOKEN no configurado');
   process.exit(1);
 }
 
-console.log('🚀 Iniciando servidor...');
+console.log('Iniciando servidor...');
 
 // Iniciar servidor Node.js
 const serverProcess = spawn('node', ['server.js'], {
@@ -119,7 +119,7 @@ const serverProcess = spawn('node', ['server.js'], {
 
 // Esperar a que el servidor esté listo
 setTimeout(async () => {
-  console.log('\n🔗 Iniciando Cloudflare Tunnel...\n');
+  console.log('\n Iniciando Cloudflare Tunnel...\n');
 
   // Iniciar cloudflared
   const tunnelProcess = spawn('cloudflared', [
@@ -138,8 +138,8 @@ setTimeout(async () => {
     if (output.includes('https://')) {
       const urlMatch = output.match(/https:\/\/[^\s]+/);
       if (urlMatch) {
-        console.log('\n✅ Tunnel establecido!');
-        console.log(`🌐 URL Pública: ${urlMatch[0]}\n`);
+        console.log('\n Tunnel establecido!');
+        console.log(` URL Pública: ${urlMatch[0]}\n`);
       }
     }
   });
@@ -148,7 +148,7 @@ setTimeout(async () => {
 
 // Manejo de cierre
 process.on('SIGINT', () => {
-  console.log('\n🛑 Cerrando servidor y tunnel...');
+  console.log('\n Cerrando servidor y tunnel...');
   serverProcess.kill();
   process.exit(0);
 });
@@ -224,10 +224,10 @@ def run_server():
         self.root.after(0, lambda: self.log_message("☁️ Iniciando con Cloudflare Tunnel..."))
         cmd = "npm run cloudflare"
     elif has_ngrok:
-        self.root.after(0, lambda: self.log_message("🔗 Iniciando con ngrok..."))
+        self.root.after(0, lambda: self.log_message(" Iniciando con ngrok..."))
         cmd = "npm run ngrok"
     else:
-        self.root.after(0, lambda: self.log_message("⚠️ Sin tunnel, servidor local"))
+        self.root.after(0, lambda: self.log_message(" Sin tunnel, servidor local"))
         cmd = "npm start"
 ```
 
@@ -352,9 +352,9 @@ Documento completo con:
 #### **Tarea 5.1: Seleccionar local piloto**
 
 Elegir el local con:
-- ✅ Menos tráfico (por si hay problemas)
-- ✅ Personal técnico disponible
-- ✅ Fácil acceso físico (por si necesitas revertir)
+-  Menos tráfico (por si hay problemas)
+-  Personal técnico disponible
+-  Fácil acceso físico (por si necesitas revertir)
 
 #### **Tarea 5.2: Ejecutar migración**
 
@@ -432,7 +432,7 @@ Durante 1 semana:
    // Reiniciar tunnel si falla
    tunnelProcess.on('exit', (code) => {
      if (code !== 0) {
-       console.log('⚠️ Tunnel falló, reiniciando...');
+       console.log(' Tunnel falló, reiniciando...');
        setTimeout(startTunnel, 5000);
      }
    });
@@ -443,8 +443,8 @@ Durante 1 semana:
    // Ping periódico para verificar que funciona
    setInterval(() => {
      fetch(`${tunnelUrl}/test`)
-       .then(() => console.log('✅ Tunnel healthy'))
-       .catch(() => console.log('❌ Tunnel down'));
+       .then(() => console.log(' Tunnel healthy'))
+       .catch(() => console.log('Tunnel down'));
    }, 60000);
    ```
 
@@ -531,7 +531,7 @@ USE_CLOUDFLARE=true
 
 ---
 
-## 📊 Estimaciones
+##  Estimaciones
 
 ### **Tiempo total:**
 - **Desarrollo inicial:** 1-2 semanas
@@ -551,7 +551,7 @@ USE_CLOUDFLARE=true
 
 ---
 
-## ✅ Criterios de Éxito
+##  Criterios de Éxito
 
 La migración será exitosa cuando:
 
@@ -592,7 +592,7 @@ Si necesitas ayuda durante la migración:
 
 ---
 
-## 📝 Notas Finales
+##  Notas Finales
 
 - **No hay prisa:** ngrok funciona perfectamente, migra solo cuando tenga sentido económicamente
 - **Prueba primero:** Siempre piloto en 1 local antes de migrar todos
@@ -608,4 +608,4 @@ Si necesitas ayuda durante la migración:
 
 ---
 
-¡Buena suerte con la migración cuando decidas hacerla! 🚀
+¡Buena suerte con la migración cuando decidas hacerla! 

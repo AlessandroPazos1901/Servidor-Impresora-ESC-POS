@@ -7,12 +7,12 @@ Este documento explica cómo configurar y usar ngrok con tu servidor de impresi�
 ngrok proporciona un túnel HTTPS público a tu servidor local, eliminando la necesidad de certificados autofirmados y permitiendo acceso desde servicios externos como Vercel.
 
 ### Ventajas sobre certificados autofirmados:
-- ✅ Sin advertencias de certificado en navegadores
-- ✅ Acceso público HTTPS desde cualquier lugar
-- ✅ Dominios estáticos con ngrok Pro (no cambia al reiniciar)
-- ✅ SSL/TLS automático
-- ✅ Dashboard de inspección de requests
-- ✅ Fácil integración con servicios externos
+-  Sin advertencias de certificado en navegadores
+-  Acceso público HTTPS desde cualquier lugar
+-  Dominios estáticos con ngrok Pro (no cambia al reiniciar)
+-  SSL/TLS automático
+-  Dashboard de inspección de requests
+-  Fácil integración con servicios externos
 
 ## Configuración Inicial
 
@@ -71,29 +71,29 @@ npm run prod
 Verás una salida similar a:
 
 ```
-🚀 Iniciando servidor de impresión...
+ Iniciando servidor de impresión...
 
-🖨️  Servidor de impresión HTTP ejecutándose en puerto 3001
-📡 Configurado para impresora en 192.168.1.200:9100
+  Servidor de impresión HTTP ejecutándose en puerto 3001
+ Configurado para impresora en 192.168.1.200:9100
 ...
 
-🔗 Iniciando túnel ngrok...
+ Iniciando túnel ngrok...
 
-✅ Túnel ngrok establecido exitosamente!
+ Túnel ngrok establecido exitosamente!
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-🌐 URL Pública: https://abc123.ngrok-free.app
-🖨️  Puerto local: 3001
+ URL Pública: https://abc123.ngrok-free.app
+  Puerto local: 3001
 
-🔗 Endpoints públicos:
+ Endpoints públicos:
    • https://abc123.ngrok-free.app/test (GET)
    • https://abc123.ngrok-free.app/print (POST)
    • https://abc123.ngrok-free.app/test-print (POST)
 
-💡 Usa esta URL en tu aplicación Vercel
+ Usa esta URL en tu aplicación Vercel
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📊 Dashboard: https://dashboard.ngrok.com
+ Dashboard: https://dashboard.ngrok.com
 ```
 
 ### Iniciar solo el servidor local (sin ngrok)
@@ -139,17 +139,17 @@ const response = await fetch(`${PRINT_SERVER_URL}/test`, {
 ## Planes de ngrok
 
 ### Plan Gratuito
-- ✅ Túneles HTTPS ilimitados
-- ⚠️  URL cambia cada vez que reinicias
-- ✅ Perfecto para desarrollo y pruebas
-- ✅ 40 conexiones/minuto
+-  Túneles HTTPS ilimitados
+-   URL cambia cada vez que reinicias
+-  Perfecto para desarrollo y pruebas
+-  40 conexiones/minuto
 
 ### Plan Pro (~$8/mes)
-- ✅ **Dominio estático** (no cambia al reiniciar)
-- ✅ Dominios personalizados
-- ✅ Sin límite de conexiones
-- ✅ IP estática
-- ✅ Ideal para producción
+-  **Dominio estático** (no cambia al reiniciar)
+-  Dominios personalizados
+-  Sin límite de conexiones
+-  IP estática
+-  Ideal para producción
 
 ## Troubleshooting
 
@@ -240,12 +240,12 @@ npm run dev
 
 ## Próximos pasos
 
-1. ✅ Configura tu `NGROK_AUTHTOKEN` en `.env`
-2. ✅ Ejecuta `npm run ngrok`
-3. ✅ Copia la URL pública
-4. ✅ Actualiza tu app de Vercel con la nueva URL
-5. ✅ Prueba un request a `/test`
-6. ✅ ¡Imprime tu primera comanda!
+1.  Configura tu `NGROK_AUTHTOKEN` en `.env`
+2.  Ejecuta `npm run ngrok`
+3.  Copia la URL pública
+4.  Actualiza tu app de Vercel con la nueva URL
+5.  Prueba un request a `/test`
+6.  ¡Imprime tu primera comanda!
 
 ---
 

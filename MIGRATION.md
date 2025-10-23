@@ -2,7 +2,7 @@
 
 Esta guía te ayudará a migrar tus instalaciones existentes (con certificados autofirmados) al nuevo sistema con ngrok.
 
-## 📋 Tabla de Contenidos
+##  Tabla de Contenidos
 
 - [Resumen de Cambios](#resumen-de-cambios)
 - [Migración Rápida (5 minutos)](#migración-rápida-5-minutos)
@@ -27,12 +27,12 @@ Esta guía te ayudará a migrar tus instalaciones existentes (con certificados a
 
 ### ¿Por qué migrar?
 
-✅ **Sin advertencias de certificado**
-✅ **Acceso desde cualquier lugar** (no solo red local)
-✅ **Más fácil de integrar** con servicios externos (Vercel, etc.)
-✅ **Dominio estático con ngrok Pro** (no cambia al reiniciar)
-✅ **Dashboard de inspección** de requests en tiempo real
-✅ **Menos configuración** (no más certificados SSL)
+ **Sin advertencias de certificado**
+ **Acceso desde cualquier lugar** (no solo red local)
+ **Más fácil de integrar** con servicios externos (Vercel, etc.)
+ **Dominio estático con ngrok Pro** (no cambia al reiniciar)
+ **Dashboard de inspección** de requests en tiempo real
+ **Menos configuración** (no más certificados SSL)
 
 ---
 
@@ -79,10 +79,10 @@ Esta guía te ayudará a migrar tus instalaciones existentes (con certificados a
    ```
 
 6. **Copiar la URL pública:**
-   - Verás algo como: `🌐 URL Pública: https://abc123.ngrok-free.app`
+   - Verás algo como: ` URL Pública: https://abc123.ngrok-free.app`
    - Copia esta URL y úsala en tu aplicación Vercel
 
-✅ **¡Listo!** Tu servidor ahora está accesible públicamente con HTTPS.
+ **¡Listo!** Tu servidor ahora está accesible públicamente con HTTPS.
 
 ---
 
@@ -136,14 +136,14 @@ Esta guía te ayudará a migrar tus instalaciones existentes (con certificados a
 
    Verás algo como:
    ```
-   🌐 URL Pública: https://abc123.ngrok-free.app
+    URL Pública: https://abc123.ngrok-free.app
    ```
 
 6. **Actualizar tu aplicación:**
    - Copia la URL pública de ngrok
    - Reemplaza la URL antigua (`https://192.168.1.47:3001`) en tu app de Vercel
 
-✅ **¡Listo!** Docker ahora usa ngrok automáticamente.
+ **¡Listo!** Docker ahora usa ngrok automáticamente.
 
 ---
 
@@ -223,35 +223,35 @@ echo "🔄 Iniciando migración a ngrok..."
 
 # Backup del .env
 cp .env .env.backup.$(date +%Y%m%d_%H%M%S)
-echo "✅ Backup de .env creado"
+echo " Backup de .env creado"
 
 # Actualizar código
 git pull origin main
-echo "✅ Código actualizado"
+echo " Código actualizado"
 
 # Instalar dependencias (solo si NO es Docker)
 if [ ! -f "docker-compose.yml" ]; then
     npm install
-    echo "✅ Dependencias actualizadas"
+    echo " Dependencias actualizadas"
 fi
 
 # Verificar si ya tiene NGROK_AUTHTOKEN
 if grep -q "NGROK_AUTHTOKEN" .env; then
-    echo "⚠️  NGROK_AUTHTOKEN ya existe en .env"
+    echo "  NGROK_AUTHTOKEN ya existe en .env"
 else
     echo "" >> .env
     echo "# ngrok configuration" >> .env
     echo "NGROK_AUTHTOKEN=PONER_TOKEN_AQUI" >> .env
     echo "NGROK_DOMAIN=" >> .env
     echo "USE_NGROK=true" >> .env
-    echo "✅ Variables de ngrok agregadas a .env"
-    echo "⚠️  IMPORTANTE: Edita .env y agrega tu NGROK_AUTHTOKEN"
+    echo " Variables de ngrok agregadas a .env"
+    echo "  IMPORTANTE: Edita .env y agrega tu NGROK_AUTHTOKEN"
 fi
 
 echo ""
-echo "✅ Migración completada"
+echo " Migración completada"
 echo ""
-echo "📝 Próximos pasos:"
+echo " Próximos pasos:"
 echo "1. Edita .env y agrega tu NGROK_AUTHTOKEN"
 echo "2. Reinicia el servidor:"
 if [ -f "docker-compose.yml" ]; then
@@ -354,11 +354,11 @@ Ya no los necesitas. ngrok se encarga del SSL/TLS automáticamente. Puedes elimi
 
 Verifica estos puntos:
 
-✅ El servidor inicia sin errores
-✅ Los logs muestran una URL de ngrok pública
-✅ Puedes acceder a `https://tu-url-ngrok/test` desde tu navegador
-✅ Tu app de Vercel puede hacer requests al servidor
-✅ La impresora funciona correctamente
+ El servidor inicia sin errores
+ Los logs muestran una URL de ngrok pública
+ Puedes acceder a `https://tu-url-ngrok/test` desde tu navegador
+ Tu app de Vercel puede hacer requests al servidor
+ La impresora funciona correctamente
 
 ### ¿Qué hago si tengo problemas?
 
