@@ -1,27 +1,30 @@
 # Servidor de Impresión Térmica
 
-Servidor local HTTPS para impresión térmica de comandas a impresoras ESC/POS compatibles.
+Servidor HTTP con túnel ngrok para impresión térmica de comandas a impresoras ESC/POS compatibles.
 
 ## Descripción
 
-Este es un servidor Node.js que actúa como puente entre una aplicación web y una impresora térmica en la red local. Permite imprimir comandas y actualizaciones de pedidos con formato térmico optimizado.
+Este es un servidor Node.js que actúa como puente entre una aplicación web (La Casita en Vercel) y una impresora térmica en la red local. Permite imprimir comandas y actualizaciones de pedidos con formato térmico optimizado.
 
 ## Características
 
-- **Servidor HTTPS** con certificados autofirmados
+- **Servidor HTTP** con túnel ngrok para acceso HTTPS público
+- **Arquitectura modular** con separación de responsabilidades
 - **Autenticación** mediante Bearer token
-- **CORS** configurado para origen específico
+- **CORS** configurado para origen específico (la-casita.vercel.app)
 - **Comunicación TCP/IP** con impresora térmica
 - **Formato ESC/POS** con codificación CP850
 - **Impresión de diferencias** para actualizaciones de pedidos
-- **Soporte Docker** con auto-reinicio y monitoreo
+- **Launcher GUI** en Python para fácil gestión del servidor
+- **Manejo robusto de errores** y reintentos
 
 ## Requisitos Previos
 
 1. **Node.js** versión 16 o superior
 2. **npm** (incluido con Node.js)
-3. Una impresora térmica compatible con ESC/POS conectada a la red
-4. Sistema operativo: Windows, macOS o Linux
+3. **Python 3.x** (para el launcher GUI)
+4. Una impresora térmica compatible con ESC/POS conectada a la red
+5. **Cuenta ngrok** (gratuita o Pro) para el túnel HTTPS
 
 ## Instalación Paso a Paso
 
@@ -35,19 +38,33 @@ Este es un servidor Node.js que actúa como puente entre una aplicación web y u
   npm --version
   ```
 
-### 2. Obtener el Código del Proyecto
+### 2. Instalar Python
+- Visita https://python.org
+- Descarga Python 3.x
+- Durante la instalación, marca "Add Python to PATH"
+- Verifica la instalación:
+  ```bash
+  python --version
+  ```
+
+### 3. Obtener el Código del Proyecto
 - Descarga o clona el proyecto en tu computadora
 - Navega a la carpeta del proyecto en la terminal:
   ```bash
   cd ruta/al/proyecto/print-server
   ```
 
-### 3. Instalar Dependencias
+### 4. Instalar Dependencias
 ```bash
 npm install
 ```
 
-### 4. Configurar Variables de Entorno
+### 5. Configurar ngrok
+1. Crea una cuenta en https://dashboard.ngrok.com
+2. Obtén tu authtoken desde https://dashboard.ngrok.com/get-started/your-authtoken
+3. (Opcional) Para ngrok Pro: obtén un dominio estático
+
+### 6. Configurar Variables de Entorno
 Edita el archivo `.env` con los siguientes valores:
 
 ```env
@@ -57,77 +74,92 @@ PRINTER_IP=192.168.1.200
 # Puerto de la impresora (generalmente 9100)
 PRINTER_PORT=9100
 
+# Puerto local del servidor
+PORT=3001
+
 # Token secreto para autenticación (cambia este valor)
 PRINT_SERVER_SECRET=tu-token-secreto-aqui
+
+# ngrok authentication token (REQUERIDO)
+NGROK_AUTHTOKEN=tu_authtoken_de_ngrok
+
+# ngrok domain (OPCIONAL - solo para cuentas Pro)
+NGROK_DOMAIN=tu-dominio-estatico.ngrok.app
 ```
 
-### 5. Configurar Certificados SSL
-El proyecto incluye certificados SSL para la IP `192.168.1.47`. Si tu computadora tiene una IP diferente:
-
-**Opción A**: Cambiar la IP de tu computadora a `192.168.1.47`
-
-**Opción B**: Generar nuevos certificados para tu IP actual:
-```bash
-# Instalar mkcert (opcional, para certificados confiables)
-# Windows: choco install mkcert
-# macOS: brew install mkcert
-# Linux: apt install libnss3-tools && wget -O mkcert https://github.com/FiloSottile/mkcert/releases/download/v1.4.4/mkcert-v1.4.4-linux-amd64 && chmod +x mkcert && sudo mv mkcert /usr/local/bin/
-
-# Generar certificados (reemplaza TU_IP con la IP de tu computadora)
-mkcert TU_IP
-```
-
-### 6. Verificar Configuración de Red
+### 7. Verificar Configuración de Red
 - Asegúrate de que tu computadora y la impresora estén en la misma red
 - Verifica que puedes hacer ping a la impresora:
   ```bash
   ping 192.168.1.200
   ```
 
-### 7. Ejecutar el Servidor
+### 8. Ejecutar el Servidor
 
-**Para desarrollo (con auto-reinicio):**
+**Opción 1: Usando el Launcher GUI (Recomendado)**
+- **Windows**: Doble clic en `Iniciar Servidor.bat` o `Servidor Impresion.vbs`
+- **Linux/Mac**: Ejecuta `python launcher.py`
+
+El launcher te permitirá:
+- Iniciar/detener el servidor con botones
+- Ver el estado en tiempo real
+- Monitorear logs
+- Acceder a la URL pública de ngrok
+
+**Opción 2: Desde la terminal**
+
+Con ngrok (recomendado):
 ```bash
-npm run dev
+npm run ngrok
 ```
 
-**Para producción:**
+Solo servidor local (sin HTTPS):
 ```bash
 npm start
 ```
 
-**Ejecutar directamente:**
+Para desarrollo (con auto-reinicio):
 ```bash
-node server.js
+npm run dev
 ```
 
-### 8. Verificar Instalación
-- El servidor debería iniciarse en `https://TU_IP:3001`
-- Prueba el endpoint de salud: `GET https://TU_IP:3001/test`
-- Prueba la impresión: `POST https://TU_IP:3001/test-print`
-
-## Instalación con Docker
-
-### 1. Instalar Docker
-- Descarga Docker Desktop desde https://docker.com
-- Sigue las instrucciones de instalación para tu sistema operativo
-
-### 2. Construir y Ejecutar
-```bash
-# Construir la imagen
-docker build -t thermal-printer-server .
-
-# Ejecutar el contenedor
-docker run --env-file .env -p 3001:3001 thermal-printer-server
-
-# O usar docker-compose
-docker-compose up -d
-```
+### 9. Verificar Instalación
+- El servidor se iniciará y ngrok generará una URL pública
+- La URL aparecerá en el launcher o en los logs de la terminal
+- Prueba el endpoint de salud: `GET https://tu-url.ngrok.app/test`
+- Prueba la impresión: `POST https://tu-url.ngrok.app/test-print`
 
 ## API Endpoints
 
 ### `GET /test`
 Endpoint de verificación de estado del servidor.
+
+**Respuesta:**
+```json
+{
+  "message": "Servidor de impresión térmica funcionando correctamente",
+  "timestamp": "2024-10-24T18:00:00.000Z"
+}
+```
+
+### `GET /health`
+Endpoint con estadísticas detalladas del servidor.
+
+**Respuesta:**
+```json
+{
+  "status": "ok",
+  "uptime": "2h 15m 30s",
+  "stats": {
+    "successfulPrints": 45,
+    "failedPrints": 2,
+    "successRate": "95.74%"
+  },
+  "server": {
+    "memory": {...}
+  }
+}
+```
 
 ### `POST /test-print`
 Imprime una página de prueba.
@@ -153,7 +185,14 @@ Content-Type: application/json
     "mesa": "número_de_mesa",
     "mozo": "nombre_del_mozo",
     "created_at": "timestamp",
-    "pedido_items": []
+    "pedido_items": [
+      {
+        "producto": "Pizza Margherita",
+        "cantidad": 2,
+        "precio": 15.50,
+        "notas": "Sin cebolla"
+      }
+    ]
   },
   "changes": {
     "agregados": [],
@@ -166,29 +205,55 @@ Content-Type: application/json
 ## Comandos Disponibles
 
 ### Desarrollo
-- `npm start` - Iniciar servidor en producción
-- `npm run dev` - Iniciar servidor de desarrollo con nodemon
+- `npm start` - Iniciar servidor HTTP local (sin ngrok)
+- `npm run dev` - Iniciar servidor de desarrollo con auto-reinicio
+- `npm run ngrok` - Iniciar servidor con túnel ngrok (recomendado)
 - `node server.js` - Ejecutar servidor directamente
 
-### Docker
-- `docker build -t thermal-printer-server .` - Construir imagen
-- `docker run --env-file .env -p 3001:3001 thermal-printer-server` - Ejecutar contenedor
-- `docker-compose up -d` - Iniciar con compose
+### Launcher
+- **Windows**: Ejecutar `Iniciar Servidor.bat` o `Servidor Impresion.vbs`
+- **Linux/Mac**: `python launcher.py`
 
 ## Estructura del Proyecto
 
 ```
 print-server/
-├── server.js              # Servidor principal con lógica ESC/POS
-├── package.json           # Dependencias y scripts
-├── .env                   # Variables de entorno
-├── 192.168.1.47.pem       # Certificado SSL
-├── 192.168.1.47-key.pem   # Clave privada SSL
-├── Dockerfile             # Configuración de contenedor
-├── docker-compose.yml     # Orquestación de contenedor
-├── docker-entrypoint.sh   # Script de inicio con auto-reinicio
-└── CLAUDE.md             # Instrucciones para Claude Code
+├── src/
+│   ├── config/
+│   │   └── escpos.js          # Comandos ESC/POS para impresora
+│   ├── printer/
+│   │   ├── connection.js      # Manejo de conexión TCP con impresora
+│   │   └── formatter.js       # Formateo de comandas con ESC/POS
+│   ├── routes/
+│   │   └── printRoutes.js     # Rutas Express para impresión
+│   └── utils/
+│       └── orderUtils.js      # Utilidades para pedidos
+├── server.js                  # Punto de entrada principal
+├── start-ngrok.js             # Inicializador de túnel ngrok
+├── launcher.py                # Launcher GUI con Python/Tkinter
+├── package.json               # Dependencias y scripts npm
+├── .env                       # Variables de entorno (no commitear)
+├── .env.example               # Ejemplo de configuración
+├── CLAUDE.md                  # Documentación para Claude Code
+├── ARCHITECTURE.md            # Documentación de arquitectura modular
+└── README.md                  # Este archivo
 ```
+
+## Arquitectura Modular
+
+El servidor está organizado en módulos especializados:
+
+- **config/escpos.js**: Define todos los comandos ESC/POS (bold, tamaños, corte, etc.)
+- **printer/connection.js**: Maneja la conexión TCP/IP con timeouts y reintentos
+- **printer/formatter.js**: Construye el buffer de impresión con formato térmico
+- **routes/printRoutes.js**: Define los endpoints HTTP y validación
+- **utils/orderUtils.js**: Funciones auxiliares para procesamiento de pedidos
+
+Ventajas de esta arquitectura:
+- **Mantenibilidad**: Cada módulo tiene una responsabilidad clara
+- **Testabilidad**: Los módulos pueden ser testeados independientemente
+- **Escalabilidad**: Fácil agregar nuevas funcionalidades
+- **Legibilidad**: El código principal pasó de 850 a 250 líneas
 
 ## Solución de Problemas
 
@@ -198,13 +263,14 @@ print-server/
 - Revisa que no haya firewall bloqueando el puerto 9100
 - Prueba hacer ping a la IP de la impresora
 
-### Error de Certificado SSL
-- Acepta el certificado autofirmado en tu navegador
-- O regenera los certificados para tu IP actual usando mkcert
-- Verifica que los archivos .pem estén en el directorio raíz
+### Error de ngrok
+- Verifica que `NGROK_AUTHTOKEN` esté configurado en `.env`
+- Asegúrate de que tu authtoken sea válido en https://dashboard.ngrok.com
+- Si usas dominio estático, verifica que `NGROK_DOMAIN` sea correcto
+- Revisa que no haya otro proceso usando ngrok en tu máquina
 
 ### Puerto en Uso
-- Si el puerto 3001 está ocupado, cambia el puerto en `server.js`
+- Si el puerto 3001 está ocupado, cambia `PORT` en `.env`
 - O termina el proceso que está usando el puerto:
   ```bash
   # Windows
@@ -222,6 +288,25 @@ print-server/
 ### Problemas de Codificación
 - El servidor usa codificación CP850 para caracteres especiales en español
 - Si hay problemas con acentos, verifica la configuración de la impresora
+
+### Servidor se Cierra Inesperadamente
+- Revisa los logs en el launcher para ver el error
+- Asegúrate de tener las últimas dependencias: `npm install`
+- Verifica que Node.js sea versión 16 o superior
+- Revisa que la impresora esté accesible en la red
+
+## ngrok: Gratuito vs Pro
+
+**Plan Gratuito:**
+- URL pública cambia cada vez que reinicias el servidor
+- Límite de conexiones
+- Suficiente para desarrollo y pruebas
+
+**Plan Pro:**
+- Dominio estático que nunca cambia
+- Sin límites de conexiones
+- Ideal para producción
+- Configurar con `NGROK_DOMAIN` en `.env`
 
 ## Contribuir
 

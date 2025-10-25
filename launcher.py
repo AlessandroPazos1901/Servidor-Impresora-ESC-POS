@@ -20,7 +20,6 @@ class ThermalPrinterLauncher:
         self.is_running = False
         self.start_time = None
         self.ngrok_url = None
-        self.use_docker = False
         self.monitor_thread = None
         self.last_health_check = None
         
@@ -264,49 +263,26 @@ class ThermalPrinterLauncher:
 
             def run_server():
                 try:
-                    # Verificar si existe imagen Docker
-                    check_image = subprocess.run(
-                        ["docker", "images", "-q", "thermal-printer-server"],
-                        capture_output=True, text=True,
+                    # Usar npm directamente
+                    has_ngrok = self.config.get('has_ngrok_token', False)
+
+                    if has_ngrok:
+                        self.root.after(0, lambda: self.log_message(" Iniciando con ngrok..."))
+                        cmd = "npm run ngrok"
+                    else:
+                        self.root.after(0, lambda: self.log_message(" ngrok no configurado, iniciando servidor local"))
+                        cmd = "npm start"
+
+                    self.server_process = subprocess.Popen(
+                        cmd,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.STDOUT,
+                        universal_newlines=True,
+                        shell=True,
+                        encoding='utf-8',
+                        errors='replace',
                         creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
                     )
-
-                    if check_image.stdout.strip():
-                        # Usar Docker si la imagen existe
-                        self.use_docker = True
-                        self.root.after(0, lambda: self.log_message("🐳 Iniciando con Docker..."))
-                        self.server_process = subprocess.Popen(
-                            "docker run --env-file .env -p 3001:3001 --name thermal-printer --rm thermal-printer-server",
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.STDOUT,
-                            universal_newlines=True,
-                            shell=True,
-                            encoding='utf-8',
-                            errors='replace',
-                            creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
-                        )
-                    else:
-                        # Fallback a npm run ngrok si no hay imagen Docker
-                        self.use_docker = False
-                        has_ngrok = self.config.get('has_ngrok_token', False)
-
-                        if has_ngrok:
-                            self.root.after(0, lambda: self.log_message(" Iniciando con ngrok..."))
-                            cmd = "npm run ngrok"
-                        else:
-                            self.root.after(0, lambda: self.log_message(" ngrok no configurado, iniciando servidor local"))
-                            cmd = "npm start"
-
-                        self.server_process = subprocess.Popen(
-                            cmd,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.STDOUT,
-                            universal_newlines=True,
-                            shell=True,
-                            encoding='utf-8',
-                            errors='replace',
-                            creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
-                        )
 
                     # Leer salida del proceso
                     for line in iter(self.server_process.stdout.readline, ''):
@@ -425,16 +401,6 @@ class ThermalPrinterLauncher:
         try:
             if self.server_process:
                 self.log_message(" Deteniendo servidor...")
-
-                # Detener contenedor Docker si existe
-                try:
-                    subprocess.run(["docker", "stop", "thermal-printer"],
-                                 creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0,
-                                 timeout=10,
-                                 capture_output=True)
-                    self.log_message("🐳 Contenedor Docker detenido")
-                except:
-                    pass
 
                 # Matar el proceso y todos sus hijos
                 if sys.platform == "win32":

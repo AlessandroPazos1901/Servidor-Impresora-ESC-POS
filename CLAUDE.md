@@ -16,11 +16,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 3. For ngrok Pro users, add `NGROK_DOMAIN` for a static domain
 4. Run `npm run ngrok` to start server with public HTTPS tunnel
 
-### Docker
-- Build: `docker build -t thermal-printer-server .`
-- Run: `docker run --env-file .env -p 3001:3001 thermal-printer-server`
-- Compose: `docker-compose up -d`
-
 ## Architecture Overview
 
 This is a Node.js HTTP server for printing thermal receipts to ESC/POS compatible printers over TCP/IP. The server acts as a bridge between a web application and a thermal printer on the local network. HTTPS is provided by ngrok for secure public access.
@@ -95,29 +90,16 @@ The `formatComanda()` function handles:
 - Order diff printing for updates (shows only changes)
 - Consistent line spacing and cutting
 
-### Docker Support
-
-**Dockerfile**: Simple Node.js container setup with SSL certificates
-**docker-compose.yml**: Production-ready orchestration with:
-- Environment variable configuration
-- Volume mounts for logs and certificates
-- Health checks and resource limits
-- Host networking for printer access
-- Security hardening options
-
-**docker-entrypoint.sh**: Ultra-reliable startup script with:
-- Signal handling for graceful shutdown
-- Automatic server restart on failure (up to 10 attempts)
-- Built-in monitoring and logging
-- System information display
-
 ### Key Files
 
-- `server.js` - Main HTTP server with ESC/POS printing logic
+- `server.js` - Main entry point that orchestrates all modules
 - `start-ngrok.js` - ngrok tunnel initialization and management
-- `docker-compose.yml` - Container orchestration with health checks
-- `docker-entrypoint.sh` - Reliable startup script with auto-restart
-- `Dockerfile` - Container build configuration
+- `launcher.py` - Python GUI launcher for easy server management
+- `src/config/escpos.js` - ESC/POS printer command definitions
+- `src/printer/connection.js` - TCP printer connection handling
+- `src/printer/formatter.js` - Order formatting with ESC/POS commands
+- `src/routes/printRoutes.js` - Express routes for printing endpoints
+- `src/utils/orderUtils.js` - Order data utilities
 - `.env` - Environment configuration (printer, ngrok, authentication)
 
 ### ngrok Benefits
