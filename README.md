@@ -1,139 +1,139 @@
 # Thermal Printer Server
 
-> Servidor Node.js que actúa como puente HTTP/TCP entre una aplicación web y una impresora térmica ESC/POS en una red local, expuesto vía túnel HTTPS de ngrok.
+> Node.js service that bridges HTTP/TCP between a web application and an ESC/POS thermal printer on a local network, exposed through an HTTPS ngrok tunnel.
 
 [![Node.js](https://img.shields.io/badge/Node.js-16%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org)
 [![Express](https://img.shields.io/badge/Express-4.21-000000?logo=express&logoColor=white)](https://expressjs.com)
 [![ngrok](https://img.shields.io/badge/ngrok-tunnel-1F1E37?logo=ngrok&logoColor=white)](https://ngrok.com)
-[![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](#licencia)
+[![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](#license)
 
 ---
 
-## Tabla de contenidos
+## Table of contents
 
-- [Descripción](#descripción)
-- [Características](#características)
-- [Arquitectura](#arquitectura)
-- [Stack tecnológico](#stack-tecnológico)
-- [Requisitos previos](#requisitos-previos)
-- [Instalación](#instalación)
-- [Configuración](#configuración)
-- [Ejecución](#ejecución)
+- [Overview](#overview)
+- [Features](#features)
+- [Architecture](#architecture)
+- [Tech stack](#tech-stack)
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Running the server](#running-the-server)
 - [API](#api)
-- [Estructura del proyecto](#estructura-del-proyecto)
-- [Solución de problemas](#solución-de-problemas)
-- [Licencia](#licencia)
+- [Project structure](#project-structure)
+- [Troubleshooting](#troubleshooting)
+- [License](#license)
 
 ---
 
-## Descripción
+## Overview
 
-Este servicio resuelve el problema de **mixed content** entre una aplicación web servida por HTTPS (desplegada en Vercel) y una impresora térmica de red que solo expone TCP plano dentro del local del comercio.
+This service solves the **mixed-content** problem between a web application served over HTTPS (deployed on Vercel) and a network thermal printer that only exposes plain TCP inside the venue's local network.
 
-El servidor recibe pedidos en formato JSON, los formatea con comandos ESC/POS y los envía por TCP/IP a la impresora. La aplicación web accede al servicio mediante una URL pública HTTPS provista por un túnel ngrok, sin necesidad de certificados auto‑firmados ni configuración de red avanzada en el local.
+The server receives orders as JSON, formats them with ESC/POS commands and sends them over TCP/IP to the printer. The web app reaches the service through a public HTTPS URL provided by an ngrok tunnel — no self-signed certificates and no advanced network configuration required on site.
 
-## Características
+## Features
 
-- **API REST** con autenticación por Bearer token y CORS restringido por origen.
-- **Túnel HTTPS público** con ngrok (soporte para dominio estático en plan Pro).
-- **Comunicación TCP/IP** directa con impresoras ESC/POS (puerto 9100 por defecto).
-- **Codificación CP850** para soporte correcto de caracteres en español.
-- **Impresión diferencial**: para actualizaciones de pedidos solo imprime *agregados*, *eliminados* y *modificados*.
-- **Arquitectura modular** con separación clara entre rutas, formateo, conexión y configuración.
-- **Manejo robusto de errores**: timeouts de conexión y escritura, reintentos, captura de excepciones no manejadas y *graceful shutdown*.
-- **Health check** y métricas en tiempo real (uptime, tasa de éxito, último error, uso de memoria).
-- **Launcher gráfico** (Python + Tkinter) para iniciar y monitorear el servidor en Windows.
+- **REST API** with Bearer token authentication and origin-restricted CORS.
+- **Public HTTPS tunnel** via ngrok (static-domain support on the Pro plan).
+- **Direct TCP/IP communication** with ESC/POS printers (default port 9100).
+- **CP850 encoding** for proper Spanish character support.
+- **Differential printing**: order updates print only *added*, *removed* and *modified* items.
+- **Modular architecture** with clear separation between routes, formatting, connection and configuration.
+- **Robust error handling**: connection and write timeouts, retries, uncaught-exception capture and *graceful shutdown*.
+- **Health check** and real-time metrics (uptime, success rate, last error, memory usage).
+- **Graphical launcher** (Python + Tkinter) to start and monitor the server on Windows.
 
-## Arquitectura
+## Architecture
 
 ```
 ┌──────────────────────┐         HTTPS         ┌─────────────────┐         TCP/IP        ┌─────────────────┐
-│  Aplicación web      │ ────────────────────▶ │  Print Server   │ ────────────────────▶ │  Impresora      │
-│  (Vercel)            │   Bearer + JSON       │  (Node.js)      │   ESC/POS + CP850     │  térmica        │
+│   Web application    │ ────────────────────▶ │  Print Server   │ ────────────────────▶ │     Thermal     │
+│      (Vercel)        │   Bearer + JSON       │    (Node.js)    │   ESC/POS + CP850     │     printer     │
 └──────────────────────┘                       └─────────────────┘                       └─────────────────┘
                                                        ▲
-                                                       │ Túnel
+                                                       │ Tunnel
                                                        │
                                                 ┌─────────────┐
                                                 │    ngrok    │
                                                 └─────────────┘
 ```
 
-## Stack tecnológico
+## Tech stack
 
-| Categoría | Tecnologías |
+| Category | Technologies |
 |---|---|
 | **Runtime** | Node.js 16+ |
 | **Web framework** | Express 4 |
-| **Networking** | `net` (TCP/IP nativo), `http` |
+| **Networking** | `net` (native TCP/IP), `http` |
 | **Tunneling** | `@ngrok/ngrok` |
 | **Encoding** | `iconv-lite` (CP850) |
 | **Middleware** | `cors`, `express.json` |
-| **Configuración** | `dotenv` |
+| **Configuration** | `dotenv` |
 | **Dev tooling** | `nodemon` |
-| **Launcher GUI** | Python 3 + Tkinter |
-| **Protocolo de impresión** | ESC/POS |
+| **GUI launcher** | Python 3 + Tkinter |
+| **Printing protocol** | ESC/POS |
 
-## Requisitos previos
+## Prerequisites
 
-- Node.js 16 o superior y npm
-- Python 3.x (solo si se usa el launcher gráfico)
-- Impresora térmica compatible con ESC/POS conectada a la misma red local
-- Cuenta de ngrok (plan gratuito o Pro)
+- Node.js 16 or later, plus npm
+- Python 3.x (only required for the graphical launcher)
+- ESC/POS-compatible thermal printer connected to the same local network
+- An ngrok account (Free or Pro plan)
 
-## Instalación
+## Installation
 
 ```bash
-git clone <url-del-repo>
+git clone <repo-url>
 cd print-server
 npm install
 cp .env.example .env
 ```
 
-## Configuración
+## Configuration
 
-Edita el archivo `.env` con tus valores:
+Edit the `.env` file with your values:
 
 ```env
-# Impresora
+# Printer
 PRINTER_IP=192.168.1.200
 PRINTER_PORT=9100
 
-# Servidor
+# Server
 PORT=3001
-PRINT_SERVER_SECRET=<token-largo-y-aleatorio>
+PRINT_SERVER_SECRET=<long-random-token>
 
 # ngrok
-NGROK_AUTHTOKEN=<tu-authtoken>
-NGROK_DOMAIN=                  # opcional (ngrok Pro)
+NGROK_AUTHTOKEN=<your-authtoken>
+NGROK_DOMAIN=                  # optional (ngrok Pro)
 ```
 
-> **Tip:** genera un token seguro con
+> **Tip:** generate a secure token with
 > `node -e "console.log(require('crypto').randomUUID())"`
 
-| Variable | Descripción | Requerido |
+| Variable | Description | Required |
 |---|---|:---:|
-| `PRINTER_IP` | IP de la impresora térmica en la LAN | ✓ |
-| `PRINTER_PORT` | Puerto TCP de la impresora (típicamente 9100) | ✓ |
-| `PORT` | Puerto local del servidor HTTP | ✓ |
-| `PRINT_SERVER_SECRET` | Bearer token para autenticar las peticiones | ✓ |
-| `NGROK_AUTHTOKEN` | Token de autenticación de ngrok | ✓ |
-| `NGROK_DOMAIN` | Dominio estático de ngrok (Pro) | ✗ |
+| `PRINTER_IP` | LAN IP address of the thermal printer | ✓ |
+| `PRINTER_PORT` | Printer TCP port (typically 9100) | ✓ |
+| `PORT` | Local HTTP server port | ✓ |
+| `PRINT_SERVER_SECRET` | Bearer token used to authenticate requests | ✓ |
+| `NGROK_AUTHTOKEN` | ngrok authentication token | ✓ |
+| `NGROK_DOMAIN` | ngrok static domain (Pro) | ✗ |
 
-## Ejecución
+## Running the server
 
-| Comando | Descripción |
+| Command | Description |
 |---|---|
-| `npm run ngrok` | Inicia servidor + túnel HTTPS público (recomendado). |
-| `npm start` | Inicia solo el servidor HTTP local. |
-| `npm run dev` | Modo desarrollo con auto‑reinicio (`nodemon`). |
-| `python launcher.py` | Launcher gráfico con control y logs en vivo. |
+| `npm run ngrok` | Starts the server + public HTTPS tunnel (recommended). |
+| `npm start` | Starts the local HTTP server only. |
+| `npm run dev` | Development mode with auto-reload (`nodemon`). |
+| `python launcher.py` | Graphical launcher with controls and live logs. |
 
-En Windows también puedes usar `Iniciar Servidor.bat` o `Servidor Impresion.vbs` para arrancar el launcher con doble clic.
+On Windows you can also double-click `Iniciar Servidor.bat` or `Servidor Impresion.vbs` to open the launcher.
 
 ## API
 
-Todos los endpoints `POST` requieren el header:
+All `POST` endpoints require the header:
 
 ```
 Authorization: Bearer <PRINT_SERVER_SECRET>
@@ -141,20 +141,20 @@ Authorization: Bearer <PRINT_SERVER_SECRET>
 
 ### `GET /test`
 
-Health check básico.
+Basic health check.
 
 ```json
-{ "message": "Servidor de impresión HTTPS funcionando correctamente" }
+{ "message": "HTTPS print server is running correctly" }
 ```
 
 ### `GET /health`
 
-Estadísticas detalladas del servidor.
+Detailed server statistics.
 
 ```json
 {
   "status": "ok",
-  "uptime": "125 minutos",
+  "uptime": "125 minutes",
   "stats": {
     "totalRequests": 47,
     "successfulPrints": 45,
@@ -174,11 +174,11 @@ Estadísticas detalladas del servidor.
 
 ### `POST /test-print`
 
-Imprime una página de prueba para verificar la conexión con la impresora.
+Prints a test page to verify the connection to the printer.
 
 ### `POST /print`
 
-Imprime una comanda completa o una actualización de pedido.
+Prints a complete order or an order update.
 
 **Request body:**
 
@@ -210,61 +210,61 @@ Imprime una comanda completa o una actualización de pedido.
 ```json
 {
   "success": true,
-  "message": "Pedido impreso correctamente",
+  "message": "Order printed successfully",
   "mesa": "5",
   "duration": 342
 }
 ```
 
-**Response (4xx / 5xx):** incluye `error`, `details`, `code` y `mesa` para facilitar diagnóstico.
+**Response (4xx / 5xx):** includes `error`, `details`, `code` and `mesa` to make diagnostics easier.
 
-## Estructura del proyecto
+## Project structure
 
 ```
 print-server/
 ├── src/
 │   ├── config/
-│   │   └── escpos.js           # Definición de comandos ESC/POS
+│   │   └── escpos.js           # ESC/POS command definitions
 │   ├── printer/
-│   │   ├── connection.js       # Conexión TCP con timeouts y manejo de errores
-│   │   └── formatter.js        # Construcción del buffer ESC/POS de la comanda
+│   │   ├── connection.js       # TCP connection with timeouts and error handling
+│   │   └── formatter.js        # Builds the ESC/POS buffer for the order
 │   ├── routes/
-│   │   └── printRoutes.js      # Endpoints /print y /test-print con validación
+│   │   └── printRoutes.js      # /print and /test-print endpoints with validation
 │   └── utils/
-│       └── orderUtils.js       # Helpers de procesamiento de pedidos
-├── server.js                   # Punto de entrada (Express + middleware + health)
-├── start-ngrok.js              # Bootstrap del túnel ngrok
-├── launcher.py                 # GUI Tkinter para gestión del servidor
-├── Iniciar Servidor.bat        # Atajo de arranque (Windows)
-├── Servidor Impresion.vbs      # Atajo silencioso (Windows)
+│       └── orderUtils.js       # Order processing helpers
+├── server.js                   # Entry point (Express + middleware + health)
+├── start-ngrok.js              # ngrok tunnel bootstrap
+├── launcher.py                 # Tkinter GUI to manage the server
+├── Iniciar Servidor.bat        # Startup shortcut (Windows)
+├── Servidor Impresion.vbs      # Silent startup shortcut (Windows)
 ├── package.json
 ├── .env.example
 └── README.md
 ```
 
-## Solución de problemas
+## Troubleshooting
 
 <details>
-<summary><strong>Error de conexión a la impresora</strong></summary>
+<summary><strong>Printer connection error</strong></summary>
 
-- Verifica `PRINTER_IP` y `PRINTER_PORT` en `.env`.
-- Confirma que la impresora esté encendida y en la misma red.
-- Comprueba conectividad: `ping <PRINTER_IP>`.
-- Asegúrate de que el firewall no bloquee el puerto 9100.
+- Check `PRINTER_IP` and `PRINTER_PORT` in `.env`.
+- Confirm the printer is powered on and on the same network.
+- Test connectivity with `ping <PRINTER_IP>`.
+- Make sure the firewall is not blocking port 9100.
 
 </details>
 
 <details>
-<summary><strong>Error de ngrok</strong></summary>
+<summary><strong>ngrok error</strong></summary>
 
-- Confirma que `NGROK_AUTHTOKEN` esté presente y sea válido.
-- Si usas dominio estático, verifica que `NGROK_DOMAIN` exista en tu cuenta.
-- Cierra cualquier otro proceso de ngrok activo en la máquina.
+- Confirm that `NGROK_AUTHTOKEN` is set and valid.
+- If you use a static domain, verify `NGROK_DOMAIN` exists in your account.
+- Close any other ngrok process running on the machine.
 
 </details>
 
 <details>
-<summary><strong>Puerto en uso</strong></summary>
+<summary><strong>Port already in use</strong></summary>
 
 ```bash
 # Windows
@@ -278,20 +278,20 @@ lsof -ti:3001 | xargs kill -9
 </details>
 
 <details>
-<summary><strong>Error de autenticación (401 / 403)</strong></summary>
+<summary><strong>Authentication error (401 / 403)</strong></summary>
 
-- El header debe ser exactamente `Authorization: Bearer <token>`.
-- El token debe coincidir con `PRINT_SERVER_SECRET` del `.env`.
+- The header must be exactly `Authorization: Bearer <token>`.
+- The token must match `PRINT_SERVER_SECRET` from `.env`.
 
 </details>
 
 <details>
-<summary><strong>Caracteres con acento mal impresos</strong></summary>
+<summary><strong>Accented characters print incorrectly</strong></summary>
 
-El servidor codifica el buffer en CP850. Si la impresora tiene otra página de códigos configurada, ajusta el código en `src/printer/formatter.js` o la configuración de la impresora.
+The server encodes the buffer in CP850. If the printer is configured with a different code page, adjust `src/printer/formatter.js` or the printer settings.
 
 </details>
 
-## Licencia
+## License
 
 ISC
