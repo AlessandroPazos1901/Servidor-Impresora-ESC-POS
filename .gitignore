@@ -114,3 +114,8 @@ docker-compose.override.yml
 # Temporary files
 *.tmp
 *.temp
+
+# Internal documentation (not for public repo)
+Claude
+CLAUDE.md
+ARCHITECTURE.md
